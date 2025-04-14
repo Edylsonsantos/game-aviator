@@ -5,7 +5,7 @@ Este projeto implementa o jogo Aviator, um popular jogo de crash onde os jogador
 
 ## Funcionalidades Principais
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/90d4aa18-e2e2-46f1-b5c7-9df945d198ca" alt="Logo do Projeto" width="50%">
+  <img src="https://github.com/user-attachments/assets/603ed22e-5134-4332-afd7-29e28ea8233f" alt="Logo do Projeto" width="50%">
 </div>
 
 ### Mecânica do Jogo
