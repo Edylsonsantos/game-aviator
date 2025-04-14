@@ -4,8 +4,9 @@
 Este projeto implementa o jogo Aviator, um popular jogo de crash onde os jogadores apostam e tentam retirar seus ganhos antes que o avião "caia". O jogo foi desenvolvido com HTML, CSS (Tailwind) e JavaScript puro.
 
 ## Funcionalidades Principais
-
-![Captu![Captura de Tela (431)](https://github.com/user-attachments/assets/90d4aa18-e2e2-46f1-b5c7-9df945d198ca)
+<div align="center">
+  <img src="[logo.png](https://github.com/user-attachments/assets/90d4aa18-e2e2-46f1-b5c7-9df945d198ca)" alt="Logo do Projeto" width="200" height="200">
+</div>
 
 ### Mecânica do Jogo
 - **Multiplicador crescente**: O valor multiplicador aumenta progressivamente
