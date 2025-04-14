@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator - Controle Simplificado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes takeoff {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(100vw) scale(0.5); opacity: 0; }
+        }
+        
+        .airplane {
+            transition: transform 0.1s ease-out;
+        }
+        
+        .crash-animation {
+            animation: takeoff 0.5s forwards;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .message-error {
+            color: #ef4444;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        
+        .message-success {
+            color: #4ade80;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+        
+        button, input {
+            border-radius: 4px;
+        }
+        
+        .disabled-control {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .countdown {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        
+        /* Estilos para as estrelas */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+            pointer-events: none;
+        }
+        
+        #stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+    <!-- Container para as estrelas -->
+    <div id="stars-container"></div>
+
+    <div class="bg-gray-800 shadow-lg w-full max-w-2xl flex relative z-10 to-transparent">
+        <div class="bg-gray-700 p-2 w-80 rounded-sm-lg">
+            <div class="flex justify-between items-center mb-3 border-b border-gray-600 pb-2">
+                <h3 class="text-sm font-bold">Histórico de Apostas</h3>
+                <div class="flex items-center gap-1">
+                    <span class="text-green-400 font-bold text-base bg-gray-800 p-2 rounded-sm" id="balanceDisplay">1000.00 Mt</span>
+                </div>
+            </div>
+            
+            <div id="history" class="space-y-0 max-h-96 overflow-y-auto">
+                <!-- Exemplo de itens de histórico -->
+            </div>
+        </div>
+        <!-- Game Area -->
+        <div class="p-6">
+            <!-- Multiplier Display -->
+            <div class="bg-gray-700 p-6 mb-6 text-center rounded-sm-sm">
+                <div id="multiplier" class="text-5xl font-bold text-green-400"></div>
+                <div id="message" class="mt-2 min-h-6"></div>
+                <div id="countdown" class="countdown mt-2 uppercase"></div>
+            </div>
+            
+            <!-- Airplane Graphic -->
+            <div class="relative h-40 mb-6 overflow-hidden">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="h-0.5 w-full bg-gradient-to-r from-transparent via-green-500 to-transparent"></div>
+                </div>
+                <div id="airplane" class="airplane absolute left-4 top-1/2 -translate-y-1/2 w-16 h-16">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <path d="M10,50 L90,50 L70,30 L90,50 L70,70 Z" fill="#EF4444" stroke="#000"/>
+                        <circle cx="25" cy="50" r="10" fill="#F59E0B"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Bet Controls -->
+            <div class="flex gap-4 w-full">
+                <!-- Card de controle de apostas -->
+                <div class="flex flex-col gap-4" style="width: 50%">
+                    <!-- Controle de valor manual (+/-) -->
+                    <div id="betControls" class="flex items-center gap-1 justify-around">
+                        <button id="decreaseBet" class="bg-gray-600 hover:bg-gray-700 h-12 w-12 flex items-center justify-center">
+                            <span class="text-xl">-</span>
+                        </button>
+                        <input type="number" id="betAmount" 
+                               class="h-12 p-3 bg-gray-700 text-center w-28" 
+                               value="10" min="1">
+                        <button id="increaseBet" class="bg-gray-600 hover:bg-gray-700 h-12 w-12 flex items-center justify-center">
+                            <span class="text-xl">+</span>
+                        </button>
+                    </div>
+                
+                    <!-- Botões de valor rápido -->
+                    <div id="quickBets" class="grid grid-cols-4 gap-1">
+                        <button class="quick-bet bg-gray-600 hover:bg-gray-700 h-12 flex items-center justify-center" data-value="10">
+                            <span class="text-sm">10</span>
+                        </button>
+                        <button class="quick-bet bg-gray-600 hover:bg-gray-700 h-12 flex items-center justify-center" data-value="20">
+                            <span class="text-sm">20</span>
+                        </button>
+                        <button class="quick-bet bg-gray-600 hover:bg-gray-700 h-12 flex items-center justify-center" data-value="50">
+                            <span class="text-sm">50</span>
+                        </button>
+                        <button class="quick-bet bg-gray-600 hover:bg-gray-700 h-12 flex items-center justify-center" data-value="100">
+                            <span class="text-sm">100</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Card de ações (Apostar/Retirar) -->
+                <div class="flex-1 flex flex-col gap-2" style="width: 50%">
+                    <button id="placeBet" 
+                            class="h-full bg-green-600 hover:bg-green-700 py-3 px-4 font-bold uppercase transition flex items-center justify-center">
+                        Apostar
+                    </button>
+                    <button id="cashOut" disabled
+                            class="h-full bg-yellow-600 hover:bg-yellow-700 py-3 px-4 font-bold uppercase transition disabled:opacity-50 flex items-center justify-center">
+                        Retirar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameRunning = false;
+        let currentMultiplier = 1.0;
+        let multiplierSpeed = 0.01;
+        let gameInterval;
+        let playerBet = 0;
+        let cashedOut = false;
+        let balance = 1000.00;
+        let autoStartTimer = null;
+        let countdownInterval = null;
+        let targetMultiplier = 0;
+        
+        // DOM Elements
+        const multiplierDisplay = document.getElementById('multiplier');
+        const messageDisplay = document.getElementById('message');
+        const countdownDisplay = document.getElementById('countdown');
+        const airplane = document.getElementById('airplane');
+        const betAmountInput = document.getElementById('betAmount');
+        const placeBetBtn = document.getElementById('placeBet');
+        const cashOutBtn = document.getElementById('cashOut');
+        const historyContainer = document.getElementById('history');
+        const increaseBetBtn = document.getElementById('increaseBet');
+        const decreaseBetBtn = document.getElementById('decreaseBet');
+        const quickBetsContainer = document.getElementById('quickBets');
+        const betControls = document.getElementById('betControls');
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const starsContainer = document.getElementById('stars-container');
+        
+        // Criar estrelas de fundo
+        function createStars() {
+            const starCount = 100;
+            const containerWidth = window.innerWidth;
+            const containerHeight = window.innerHeight;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Tamanho aleatório entre 1px e 3px
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                
+                // Posição aleatória
+                star.style.left = `${Math.random() * containerWidth}px`;
+                star.style.top = `${Math.random() * containerHeight}px`;
+                
+                // Atraso aleatório na animação
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Inicializar saldo e estrelas
+        updateBalance();
+        createStars();
+        
+        // Bet amount controls
+        increaseBetBtn.addEventListener('click', () => {
+            betAmountInput.value = parseInt(betAmountInput.value) + 1;
+        });
+        
+        decreaseBetBtn.addEventListener('click', () => {
+            const currentValue = parseInt(betAmountInput.value);
+            if (currentValue > 1) {
+                betAmountInput.value = currentValue - 1;
+            }
+        });
+        
+        // Quick bet buttons
+        document.querySelectorAll('.quick-bet').forEach(button => {
+            button.addEventListener('click', () => {
+                betAmountInput.value = button.getAttribute('data-value');
+            });
+        });
+        
+        // Game Functions
+        function startGame() {
+            if (gameRunning) return;
+            
+            clearCountdown();
+            
+            playerBet = parseFloat(betAmountInput.value);
+            if (isNaN(playerBet) || playerBet <= 0) {
+                showMessage("Insira um valor válido!", "error");
+                return;
+            }
+            
+            if (playerBet > balance) {
+                showMessage("Saldo insuficiente!", "error");
+                return;
+            }
+            
+            balance -= playerBet;
+            updateBalance();
+            
+            gameRunning = true;
+            cashedOut = false;
+            currentMultiplier = 1.0;
+            // Multiplicador alvo aleatório entre 1.2x e 15x
+            targetMultiplier = 1.2 + Math.random() * 13.8;
+            multiplierSpeed = 0.01 + (Math.random() * 0.02);
+            
+            // Desabilitar controles
+            disableControls(true);
+            
+            // Reset airplane position
+            airplane.style.transform = 'translateX(0)';
+            airplane.classList.remove('crash-animation');
+            
+            gameInterval = setInterval(() => updateGame(), 20);
+        }
+        
+        function updateGame() {
+            // Increase multiplier
+            currentMultiplier += multiplierSpeed;
+            multiplierSpeed *= 1.002; // Aceleração progressiva
+            
+            // Update display
+            multiplierDisplay.textContent = currentMultiplier.toFixed(2) + 'x';
+            
+            // Move airplane
+            const progress = Math.min(currentMultiplier / 15, 1); // Ajustado para máximo de 15x
+            airplane.style.transform = `translateX(${progress * 300}%) rotate(${(currentMultiplier - 1) * 2}deg)`;
+            
+            // Verificar se atingiu o multiplicador alvo
+            if (currentMultiplier >= targetMultiplier) {
+                endGame(false); // Avião caiu (atingiu o limite)
+            }
+        }
+        
+        function cashOut() {
+            if (!gameRunning || cashedOut) return;
+            
+            cashedOut = true;
+            registerWin(); // Registra o ganho mas não termina o jogo
+        }
+        
+        function registerWin() {
+            const winnings = playerBet * currentMultiplier;
+            
+            balance += winnings;
+            updateBalance();
+            
+            // Add to history
+            addToHistory(currentMultiplier, true, winnings);
+            
+            showMessage(`Você retirou com ${currentMultiplier.toFixed(2)}x! Ganhou ${winnings.toFixed(2)}Mt`, "success");
+            
+            // Não termina o jogo - continua até atingir o targetMultiplier
+        }
+        
+        function endGame(win) {
+            clearInterval(gameInterval);
+            gameRunning = false;
+            
+            // Animate airplane
+            airplane.classList.add('crash-animation');
+            
+            if (!win) {
+                // Calculate loss
+                const loss = playerBet;
+                
+                // Add to history
+                addToHistory(currentMultiplier, false, loss);
+                
+                showMessage("O avião caiu! Você perdeu sua aposta.", "error");
+            }
+            
+            // Reabilitar controles
+            disableControls(false);
+            
+            // Iniciar contagem regressiva para próximo jogo
+            startCountdown();
+        }
+        
+        function startCountdown() {
+            let seconds = 7;
+            multiplierDisplay.textContent = 'INICIANDO';
+            
+            countdownInterval = setInterval(() => {
+                seconds--;
+                countdownDisplay.textContent = `Próximo jogo em: ${seconds}s`;
+                
+                if (seconds <= 0) {
+                    clearCountdown();
+                    startGame();
+                }
+            }, 1000);
+        }
+        
+        function clearCountdown() {
+            clearInterval(countdownInterval);
+            countdownDisplay.textContent = "";
+        }
+        
+        function addToHistory(multiplier, win, amount) {
+            const historyItem = document.createElement('div');
+            historyItem.className = `flex history-item p-2 rounded-sm flex justify-between items-center ${win ? 'bg-green-800/50' : 'bg-red-500/15'}`;
+            
+            const date = new Date();
+            const timeString = date.toLocaleTimeString();
+            
+            historyItem.innerHTML = `
+                    <div class="text-right">
+                        <div class="font-bold ${win ? 'text-green-400' : 'text-red-400'}">${multiplier.toFixed(2)}x</div>
+                        <div class="text-xs">${amount.toFixed(2)}Mt</div>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-xs">${timeString}</span>
+                    </div>
+            `;
+            
+            historyContainer.prepend(historyItem);
+            
+            // Limitar histórico a 20 entradas
+            if (historyContainer.children.length > 20) {
+                historyContainer.removeChild(historyContainer.lastChild);
+            }
+        }
+        
+        function showMessage(text, type) {
+            messageDisplay.textContent = text;
+            messageDisplay.className = type === "error" ? "message-error" : "message-success";
+            
+            // Limpar mensagem após 3 segundos
+            setTimeout(() => {
+                messageDisplay.textContent = "";
+                messageDisplay.className = "";
+            }, 3000);
+        }
+        
+        function disableControls(disabled) {
+            if (disabled) {
+                betControls.classList.add('disabled-control');
+                quickBetsContainer.classList.add('disabled-control');
+                placeBetBtn.disabled = true;
+                cashOutBtn.disabled = false;
+            } else {
+                betControls.classList.remove('disabled-control');
+                quickBetsContainer.classList.remove('disabled-control');
+                placeBetBtn.disabled = false;
+                cashOutBtn.disabled = true;
+            }
+        }
+        
+        function updateBalance() {
+            balanceDisplay.textContent = balance.toFixed(2) + ' Mt';
+        }
+        
+        // Event Listeners
+        placeBetBtn.addEventListener('click', startGame);
+        cashOutBtn.addEventListener('click', cashOut);
+        
+        // Cancelar auto-start se o usuário interagir
+        betAmountInput.addEventListener('input', () => {
+            clearInterval(countdownInterval);
+            countdownDisplay.textContent = "";
+        });
+        
+        document.querySelectorAll('.quick-bet').forEach(btn => {
+            btn.addEventListener('click', () => {
+                clearInterval(countdownInterval);
+                countdownDisplay.textContent = "";
+            });
+        });
+    </script>
+</body>
+</html>
